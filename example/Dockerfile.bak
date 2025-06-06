@@ -1,0 +1,6 @@
+FROM flink:1.20
+
+# Add the S3 Hadoop plugin
+RUN mkdir -p /opt/flink/plugins/s3 && \
+    curl -L -o /opt/flink/plugins/s3/flink-s3-fs-hadoop-1.20.0.jar \
+        https://repo1.maven.org/maven2/org/apache/flink/flink-s3-fs-hadoop/1.20.0/flink-s3-fs-hadoop-1.20.0.jar

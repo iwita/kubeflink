@@ -1,0 +1,2 @@
+config,num_tms,slots_per_tm,input,backpressure,throughput,input_rate,jvm_cpu_load,jvm_cpu_time,jvm_gc_time,jvm_heap_used,jvm_threads,shuffle_netty_used_segments,remote_bytes_per_sec,time_start,time_end
+tm2x4,,,,0.0,3437.1331946755504,3429.206877426515,0.03856707876608372,218134693200.66336,247.02985074626866,2163842704.636816,127.88888888888889,98.07628524046434,40613587.58402662,2025-06-05T13:29:45.788911Z,2025-06-05T13:39:50.518877Z

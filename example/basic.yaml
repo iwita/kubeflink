@@ -21,20 +21,71 @@ kind: FlinkDeployment
 metadata:
   name: basic-example
 spec:
-  image: flink:1.20
-  flinkVersion: v1_20
+  image: iwita/flink:2.0
+  flinkVersion: v2_0
   flinkConfiguration:
-    taskmanager.numberOfTaskSlots: "2"
+    metrics.reporters: influxdb
+    metrics.reporter.influxdb.tags: tm8x1
+    metrics.reporter.influxdb.factory.class: org.apache.flink.metrics.influxdb.InfluxdbReporterFactory
+    metrics.reporter.influxdb.class: org.apache.flink.metrics.influxdb.InfluxdbReporter
+    metrics.reporter.influxdb.scheme: http
+    metrics.reporter.influxdb.host: "192.168.1.216"
+    metrics.reporter.influxdb.port: 8086
+    metrics.reporter.influxdb.db: flink_metrics
+    # metrics.reporter.influxdb.username: ""
+    # metrics.reporter.influxdb.password: ""
+    metrics.reporter.influxdb.retentionPolicy: autogen
+    metrics.reporter.influxdb.consistency: ANY
+    # metrics.reporter.influxdb.connectTimeout: PT10S
+    # metrics.reporter.influxdb.writeTimeout: PT10S
+    metrics.reporter.influxdb.interval: 1 SECONDS
+    taskmanager.numberOfTaskSlots: "1"
+    job.autoscaler.enabled: "true"
+    state.savepoints.dir: s3://flink-savepoints/savepoints/
+    state.checkpoints.dir: s3://flink-savepoints/checkpoints/
+    s3.endpoint: http://minio:9000       # or http://<node-ip>:30000 if outside cluster
+    s3.access-key: flinkadmin
+    s3.secret-key: flinksecret
+    s3.path.style.access: "true"
+    s3.bucket.fs.impl: org.apache.flink.fs.s3hadoop.S3FileSystem
   serviceAccount: flink
   jobManager:
+  # scheduler: adaptive
     resource:
       memory: "2048m"
       cpu: 1
+    podTemplate:
+      spec:
+        containers:
+          - name: flink-main-container
+            volumeMounts:
+              - name: metrics-dir
+                mountPath: /opt/flink/metrics
+        volumes:
+          - name: metrics-dir
+            persistentVolumeClaim:
+              claimName: flink-metrics-pvc
   taskManager:
     resource:
       memory: "2048m"
       cpu: 1
+    podTemplate:
+      spec:
+        nodeSelector:
+          # kubernetes.io/hostname: kubeflink-worker-02
+        containers:
+          - name: flink-main-container
+            volumeMounts:
+              - name: metrics-dir
+                mountPath: /opt/flink/metrics
+        volumes:
+          - name: metrics-dir
+            persistentVolumeClaim:
+              claimName: flink-metrics-pvc
   job:
     jarURI: local:///opt/flink/examples/streaming/StateMachineExample.jar
-    parallelism: 2
-    upgradeMode: stateless
+    args:
+      - "--rps"
+      - "100000"
+    parallelism: 8
+    upgradeMode: last-state
